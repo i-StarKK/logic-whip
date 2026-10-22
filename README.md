@@ -6,7 +6,7 @@ A realistic braided bullwhip for FiveM. Standalone: no framework, no dependencie
 
 - **Custom whip model:** braided leather handle with gold fittings and a 2 m tapered lash ending in a popper.
 - **Physical lash:** follows your hand, drags on the ground, and flicks when you strike. It sleeps when idle, so it costs nothing while you stand still.
-- **Hand attach:** the handle is attached to the hand bone, so it costs nothing to keep it in your fist.
+- **Finger grip:** the grip is measured from your finger bones once, then attached to the hand, so it sits in your fist at no per-frame cost.
 - **Strike system:**
   - Left click to crack the whip.
   - A player or NPC in front of you gets hit: a hit reaction from the direction of the strike, a light screen shake for players, and lash marks that build up with each hit.
@@ -50,10 +50,13 @@ add_ace group.admin whip.use allow
 - `hit.bloodPack`: the lash-mark damage pack. Set it to `false` to disable the marks.
 - `hit.reach`: the strike distance in metres.
 
-### Attach
+### Grip
 
-- `attach.offset`: handle position in the hand.
-- `attach.rotation`: handle rotation in the hand.
+The grip is measured once from the finger bones and then attached to the hand bone.
+
+- `grip.curl`: how deep the handle sits in the fist.
+- `grip.along`: slides the handle along its axis.
+- `grip.palm`: moves it toward or away from the palm.
 
 ### Lash
 
