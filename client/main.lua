@@ -14,6 +14,7 @@ local GetOffsetFromEntityInWorldCoords = GetOffsetFromEntityInWorldCoords
 local GetEntityCoords = GetEntityCoords
 local GetFrameTime = GetFrameTime
 local STEP = 1.0 / 60.0
+local UNARMED = joaat('WEAPON_UNARMED')
 
 local matOrder = nil
 local loaded = {}
@@ -736,8 +737,8 @@ CreateThread(function()
 
         if equipped or holding then
             UpdateHoldPose(ped, equipped)
-            if equipped and GetSelectedPedWeapon(ped) ~= `WEAPON_UNARMED` then
-                SetCurrentPedWeapon(ped, `WEAPON_UNARMED`, true)
+            if equipped and GetSelectedPedWeapon(ped) ~= UNARMED then
+                SetCurrentPedWeapon(ped, UNARMED, true)
             end
         end
 
