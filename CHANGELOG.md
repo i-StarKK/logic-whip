@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Fixed the handle sitting outside the fist: the grip is now measured from the finger bones and attached to the hand bone.
+
 ## 1.0.0
 
 - First public release.

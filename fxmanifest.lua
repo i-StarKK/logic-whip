@@ -4,7 +4,7 @@ game 'gta5'
 name 'logic-whip'
 author 'StarK (Moayed) - logic'
 description 'A realistic braided bullwhip with physical lash, finger grip, hand switching, synced cracks, hits and sound'
-version '1.0.0'
+version '1.0.1'
 repository 'https://github.com/i-StarKK/logic-whip'
 
 lua54 'yes'
