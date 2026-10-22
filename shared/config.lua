@@ -43,10 +43,13 @@ WhipConfig = {
         wakeDistance = 0.25,
     },
 
-    attach = {
-        bone = 57005,
-        offset = vector3(0.09, 0.03, 0.02),
-        rotation = vector3(80.0, 0.0, 0.0),
+    hand = { bone = 57005, index = { 58867, 64097 }, pinky = { 58870, 64081 } },
+
+    grip = {
+        curl = 0.45,
+        along = 0.0,
+        palm = 0.0,
+        delayMs = 600,
     },
 
     hold = { dict = 'move_weapon@jerrycan@generic', clip = 'idle', flag = 49 },

@@ -403,10 +403,104 @@ local function PlayWhipSound(kind, pos, volume)
     })
 end
 
+local function ReadMatrix(e)
+    local a, b, u, p = GetEntityMatrix(e)
+    if matOrder == 'fr' then
+        return b, a, u, p
+    end
+    return a, b, u, p
+end
+
+local function Dot(a, b)
+    return a.x * b.x + a.y * b.y + a.z * b.z
+end
+
+local function GetGripFrame(w)
+    local H = C.hand
+    local ped = w.ped
+    local wrist = GetWorldPositionOfEntityBone(ped, GetPedBoneIndex(ped, H.bone))
+    local i0 = GetWorldPositionOfEntityBone(ped, GetPedBoneIndex(ped, H.index[1]))
+    local i2 = GetWorldPositionOfEntityBone(ped, GetPedBoneIndex(ped, H.index[2]))
+    local p0 = GetWorldPositionOfEntityBone(ped, GetPedBoneIndex(ped, H.pinky[1]))
+    local p2 = GetWorldPositionOfEntityBone(ped, GetPedBoneIndex(ped, H.pinky[2]))
+
+    local roots = (i0 + p0) / 2.0
+    local tips  = (i2 + p2) / 2.0
+    local axis  = i0 - p0
+    local l = #axis
+    if l < 1e-4 then
+        return nil
+    end
+    axis = axis / l
+
+    local G = C.grip
+    local fwd = roots - wrist
+    fwd = fwd - axis * Dot(fwd, axis)
+    local fl = #fwd
+    fwd = fl > 1e-4 and fwd / fl or vector3(0.0, 0.0, 1.0)
+
+    local c = roots + (tips - roots) * G.curl + axis * G.along + fwd * G.palm
+    local up = vector3(axis.y * fwd.z - axis.z * fwd.y, axis.z * fwd.x - axis.x * fwd.z, axis.x * fwd.y - axis.y * fwd.x)
+    return c, axis, fwd, up
+end
+
+local function EulerYXZ(X, Y, Z)
+    local sx = math.max(-1.0, math.min(1.0, Y.z))
+    return math.deg(math.asin(sx)), math.deg(math.atan(-X.z, Z.z)), math.deg(math.atan(-Y.x, Y.y))
+end
+
+local function EulerXYZ(X, Y, Z)
+    local sy = math.max(-1.0, math.min(1.0, -X.z))
+    return math.deg(math.atan(Y.z, Z.z)), math.deg(math.asin(sy)), math.deg(math.atan(X.y, X.x))
+end
+
+local function Attach(w, bone, o, r)
+    AttachEntityToEntity(w.obj, w.ped, bone, o.x, o.y, o.z, r.x, r.y, r.z, true, false, false, false, 2, true)
+end
+
 local function AttachWhipToHand(w)
-    local A = C.attach
     FreezeEntityPosition(w.obj, false)
-    AttachEntityToEntity(w.obj, w.ped, GetPedBoneIndex(w.ped, A.bone), A.offset.x, A.offset.y, A.offset.z, A.rotation.x, A.rotation.y, A.rotation.z, true, false, false, false, 2, true)
+    w.bone = GetPedBoneIndex(w.ped, C.hand.bone)
+    Attach(w, w.bone, vector3(0.0, 0.0, 0.0), vector3(0.0, 0.0, 0.0))
+    w.calibrateAt = GetGameTimer() + C.grip.delayMs
+end
+
+local function CalibrateGrip(w)
+    w.calibrateAt = nil
+    Attach(w, w.bone, vector3(0.0, 0.0, 0.0), vector3(0.0, 0.0, 0.0))
+    Wait(0)
+    Wait(0)
+
+    local br, bf, bu, bp = ReadMatrix(w.obj)
+    local c, a, f, u = GetGripFrame(w)
+    if not c then
+        return
+    end
+
+    local d = c - bp
+    local offset = vector3(Dot(d, br), Dot(d, bf), Dot(d, bu))
+    local X = vector3(Dot(a, br), Dot(a, bf), Dot(a, bu))
+    local Y = vector3(Dot(f, br), Dot(f, bf), Dot(f, bu))
+    local Z = vector3(Dot(u, br), Dot(u, bf), Dot(u, bu))
+
+    local best, bestErr = nil, -1.0
+    for _, solve in ipairs({ EulerYXZ, EulerXYZ }) do
+        local rx, ry, rz = solve(X, Y, Z)
+        local rot = vector3(rx, ry, rz)
+        Attach(w, w.bone, offset, rot)
+        Wait(0)
+        Wait(0)
+        local r2, f2 = ReadMatrix(w.obj)
+        local score = Dot(r2, a) + Dot(f2, f)
+        if score > bestErr then
+            best, bestErr = rot, score
+        end
+        if score > 1.96 then
+            break
+        end
+    end
+
+    Attach(w, w.bone, offset, best)
 end
 
 local function GetWhipTip(w)
@@ -441,6 +535,11 @@ end
 local function UpdateWhip(w, dt)
     local lash = w.lash
     w.frame = (w.frame or 0) + 1
+
+    if w.calibrateAt and GetGameTimer() >= w.calibrateAt then
+        CalibrateGrip(w)
+        lash:Wake()
+    end
 
     local tip = GetWhipTip(w)
     lash:SetAnchor(tip.x, tip.y, tip.z)
