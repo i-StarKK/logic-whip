@@ -17,6 +17,7 @@ jobs:
 
       - name: Check Lua syntax
         run: |
+          sudo apt-get update -qq > /dev/null
           sudo apt-get install -y -qq lua5.4 > /dev/null
           for f in $(git ls-files '*.lua'); do luac5.4 -p "$f"; done
 
